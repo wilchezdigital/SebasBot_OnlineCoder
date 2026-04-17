@@ -3,63 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editor de Código en Vivo</title>
+    <title>Editor de Código en Vivo OnlineCoder</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+    
     <style>
+        * { box-sizing: border-box; }
         body {
             margin: 0;
             display: flex;
+            flex-direction: column;
             height: 100vh;
-            font-family: monospace;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #282a36;
+            color: white;
         }
-        .panel {
+
+        /* Barra Superior */
+        header {
+            height: 50px;
+            background: #191a21;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            border-bottom: 1px solid #44475a;
+            justify-content: space-between;
+        }
+
+        .logo { font-weight: bold; color: #bd93f9; }
+
+        /* Contenedor Principal */
+        main {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            flex-direction: row; /* Cambia a column en móvil vía JS o CSS */
+        }
+
+        @media (max-width: 768px) {
+            main { flex-direction: column; }
+        }
+
+        .editor-container, .output-container {
             flex: 1;
             display: flex;
             flex-direction: column;
+            min-height: 100px;
         }
-        textarea {
-            flex: 1;
-            padding: 15px;
-            font-size: 14px;
-            border: none;
-            border-right: 2px solid #333;
-            resize: none;
-            background-color: #1e1e1e;
-            color: #d4d4d4;
-            outline: none;
+
+        /* Resizer (Barra para desplazar) */
+        #resizer {
+            width: 8px;
+            background: #44475a;
+            cursor: col-resize;
+            transition: background 0.2s;
         }
+        #resizer:hover { background: #6272a4; }
+
+        @media (max-width: 768px) {
+            #resizer { width: 100%; height: 8px; cursor: row-resize; }
+        }
+
+        /* CodeMirror ajustado al contenedor */
+        .CodeMirror { height: 100% !important; font-size: 14px; }
+
         iframe {
             flex: 1;
             border: none;
-            background-color: #ffffff;
+            background: white;
+        }
+
+        /* Footer */
+        footer {
+            height: 40px;
+            background: #191a21;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            font-size: 12px;
+            border-top: 1px solid #44475a;
+        }
+
+        footer a {
+            color: #8be9fd;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        footer a:hover { color: #50fa7b; }
+
+        .btn-action {
+            background: #ff79c6;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div class="panel">
-        <textarea id="editor" placeholder="Escribe HTML, CSS (etiqueta <style>) o JS (etiqueta <script>) aquí..."></textarea>
-    </div>
-    <div class="panel">
-        <iframe id="vista-previa"></iframe>
-    </div>
+
+    <header>
+        <div class="logo">WILCHEZ CODE EDITOR</div>
+        <div class="options">
+            <small>Auto-run: ON</small>
+        </div>
+    </header>
+
+    <main id="container">
+        <div class="editor-container" id="left-panel">
+            <textarea id="editor"></textarea>
+        </div>
+        
+        <div id="resizer"></div>
+        
+        <div class="output-container" id="right-panel">
+            <iframe id="preview"></iframe>
+        </div>
+    </main>
+
+    <footer>
+        <a href="https://wilchezdigital.onrender.com/" target="_blank">Mi Portafolio</a>
+        <a href="https://sebasbot-specialoffer.onrender.com/" target="_blank" class="btn-action">Usar SebasBot Gratis</a>
+        <a href="https://www.linkedin.com/in/wilchez/" target="_blank">LinkedIn</a>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/htmlmixed/htmlmixed.min.js"></script>
 
     <script>
-        // Selección de los elementos del DOM
-        const editor = document.getElementById('editor');
-        const iframe = document.getElementById('vista-previa');
+        // 1. Configurar el Editor con resaltado de colores
+        const editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+            mode: "htmlmixed",
+            theme: "dracula",
+            lineNumbers: true,
+            autoCloseTags: true,
+            autoCloseBrackets: true,
+            tabSize: 2
+        });
 
-        // Función para actualizar el iframe
-        function actualizarVistaPrevia() {
-            const codigo = editor.value;
-            const documentoIframe = iframe.contentWindow.document;
-            
-            // Sobreescribir el documento del iframe con el código del textarea
-            documentoIframe.open();
-            documentoIframe.write(codigo);
-            documentoIframe.close();
+        // Código inicial por defecto
+        editor.setValue(`<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding-top: 50px; }
+    h1 { color: #6272a4; }
+  </style>
+</head>
+<body>
+  <h1>¡Hola Mundo!</h1>
+  <p>Escribe aquí para ver los cambios.</p>
+  <script>
+    console.log('Editor listo');
+  <\/script>
+</body>
+</html>`);
+
+        // 2. Lógica de actualización del Output
+        const preview = document.getElementById("preview");
+        
+        function update() {
+            const content = editor.getValue();
+            const iframeDoc = preview.contentWindow.document;
+            iframeDoc.open();
+            iframeDoc.write(content);
+            iframeDoc.close();
         }
 
-        // Ejecutar la actualización cada vez que se escribe en el textarea
-        editor.addEventListener('input', actualizarVistaPrevia);
+        editor.on("change", () => {
+            update();
+        });
+
+        // Carga inicial
+        update();
+
+        // 3. Lógica del Resizer (Desplazamiento vertical/horizontal)
+        const resizer = document.getElementById("resizer");
+        const leftPanel = document.getElementById("left-panel");
+        const container = document.getElementById("container");
+
+        let isResizing = false;
+
+        resizer.addEventListener("mousedown", (e) => {
+            isResizing = true;
+            document.body.style.cursor = "col-resize";
+        });
+
+        document.addEventListener("mousemove", (e) => {
+            if (!isResizing) return;
+            
+            let offsetLeft = e.clientX;
+            let containerWidth = container.clientWidth;
+            
+            // Limitamos el ancho mínimo y máximo
+            if (offsetLeft > 100 && offsetLeft < containerWidth - 100) {
+                let percentage = (offsetLeft / containerWidth) * 100;
+                leftPanel.style.flex = `0 0 ${percentage}%`;
+            }
+        });
+
+        document.addEventListener("mouseup", () => {
+            isResizing = false;
+            document.body.style.cursor = "default";
+        });
+
+        // Soporte básico para táctil en móvil (Resizer)
+        resizer.addEventListener("touchstart", () => isResizing = true);
+        document.addEventListener("touchend", () => isResizing = false);
+        document.addEventListener("touchmove", (e) => {
+            if (!isResizing) return;
+            let touch = e.touches[0];
+            let containerHeight = container.clientHeight;
+            let offsetTop = touch.clientY - 50; // Ajuste por el header
+            let percentage = (offsetTop / containerHeight) * 100;
+            if (percentage > 10 && percentage < 90) {
+                leftPanel.style.flex = `0 0 ${percentage}%`;
+            }
+        });
     </script>
 </body>
 </html>
