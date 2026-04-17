@@ -9,123 +9,144 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
     
     <style>
+        :root {
+            --bg: #1e1e1e;
+            --card: #111218;
+            --text: #e6e6f0;
+            --primary: #ff6a00;
+            --primary-2: #ff8c1a;
+            --stroke: #242634;
+        }
+
         * { box-sizing: border-box; }
+        
         body {
             margin: 0;
             display: flex;
             flex-direction: column;
             height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1e1e1e;
-            color: white;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
         }
 
-        /* Barra Superior */
+        /* BARRA SUPERIOR */
         header {
-            height: 50px;
-            background: #191a21;
+            height: 60px;
+            background: rgba(11, 12, 16, 0.9);
+            backdrop-filter: blur(8px);
             display: flex;
             align-items: center;
             padding: 0 20px;
-            border-bottom: 1px solid #44475a;
+            border-bottom: 1px solid var(--stroke);
             justify-content: space-between;
+            z-index: 10;
         }
 
-        .logo { font-weight: bold; color: #fff; }
+        .brand { font-weight: 800; font-size: 1.2rem; }
+        .grad {
+            background: linear-gradient(90deg, var(--primary), var(--primary-2));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
 
-        /* Contenedor Principal */
+        /* ÁREA DE TRABAJO */
         main {
             flex: 1;
             display: flex;
+            position: relative;
             overflow: hidden;
-            flex-direction: row; /* Cambia a column en móvil vía JS o CSS */
         }
 
-        @media (max-width: 768px) {
-            main { flex-direction: column; }
-        }
-
-        .editor-container, .output-container {
-            flex: 1;
+        .panel {
+            position: relative;
             display: flex;
             flex-direction: column;
-            min-height: 100px;
+            overflow: hidden;
         }
 
-        /* Resizer (Barra para desplazar) */
+        #left-panel { flex: 1; min-width: 100px; }
+        #right-panel { flex: 1; min-width: 100px; background: white; }
+
+        /* RESIZER MEJORADO */
         #resizer {
-            width: 8px;
-            background: #44475a;
+            width: 6px;
+            background: var(--stroke);
             cursor: col-resize;
             transition: background 0.2s;
+            z-index: 5;
+            position: relative;
         }
-        #resizer:hover { background: #6272a4; }
+        #resizer:hover, #resizer.active { background: var(--primary); }
 
-        @media (max-width: 768px) {
-            #resizer { width: 100%; height: 8px; cursor: row-resize; }
-        }
+        /* Evita que el iframe capture el mouse al arrastrar */
+        .dragging iframe { pointer-events: none; }
 
-        /* CodeMirror ajustado al contenedor */
-        .CodeMirror { height: 100% !important; font-size: 14px; }
+        /* EDITOR Y OUTPUT */
+        .CodeMirror { height: 100% !important; font-size: 14px; background: #1e1e1e !important; }
+        iframe { width: 100%; height: 100%; border: none; }
 
-        iframe {
-            flex: 1;
-            border: none;
-            background: white;
-        }
-
-        /* Footer */
+        /* FOOTER */
         footer {
-            height: 40px;
-            background: #191a21;
+            height: 50px;
+            background: var(--card);
+            border-top: 1px solid var(--stroke);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 20px;
-            font-size: 12px;
-            border-top: 1px solid #44475a;
+            gap: 25px;
+            padding: 0 20px;
+            font-size: 13px;
         }
 
         footer a {
-            color: #8be9fd;
+            color: var(--text);
             text-decoration: none;
-            transition: color 0.2s;
+            transition: 0.2s;
         }
-        footer a:hover { color: #50fa7b; }
+        footer a:hover { color: var(--primary); }
 
-        .btn-action {
-            background: #ff79c6;
+        .btn-sebas {
+            background: var(--primary);
             color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: bold;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            main { flex-direction: column; }
+            #resizer { width: 100%; height: 6px; cursor: row-resize; }
+            header { height: 50px; }
+            footer { height: auto; flex-direction: column; padding: 15px; gap: 10px; }
         }
     </style>
 </head>
-<body>
+<body id="app-container">
 
     <header>
-        <div class="logo">Editor de Código en Vivo OnlineCoder</div>
-        <div class="options">
-            <small>Auto-run: ON</small>
-        </div>
+        <div class="brand">WILCHEZ <span class="grad">EDITOR</span></div>
+        <div style="font-size: 12px; color: #a8adbd;">Output en vivo activado</div>
     </header>
 
-    <main id="container">
-        <div class="editor-container" id="left-panel">
-            <textarea id="editor"></textarea>
+    <main id="workspace">
+        <div class="panel" id="left-panel">
+            <textarea id="code-editor"></textarea>
         </div>
-        
+
         <div id="resizer"></div>
-        
-        <div class="output-container" id="right-panel">
-            <iframe id="preview"></iframe>
+
+        <div class="panel" id="right-panel">
+            <iframe id="output-view"></iframe>
         </div>
     </main>
 
     <footer>
-        <a href="https://wilchezdigital.onrender.com/" target="_blank">Mi Sitio Web</a>
-        <a href="https://sebasbot-specialoffer.onrender.com/" target="_blank" class="btn-action">Usa SebasBot Gratis</a>
+        <a href="https://wilchezdigital.onrender.com/" target="_blank">Mí Portafolio</a>
+        <a href="https://sebasbot-specialoffer.onrender.com/" target="_blank" class="btn-sebas">SebasBot Gratis</a>
         <a href="https://www.linkedin.com/in/wilchez/" target="_blank">LinkedIn</a>
     </footer>
 
@@ -136,95 +157,101 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/htmlmixed/htmlmixed.min.js"></script>
 
     <script>
-        // 1. Configurar el Editor con resaltado de colores
-        const editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+        // 1. Inicialización del Editor
+        const editor = CodeMirror.fromTextArea(document.getElementById("code-editor"), {
             mode: "htmlmixed",
             theme: "dracula",
             lineNumbers: true,
-            autoCloseTags: true,
-            autoCloseBrackets: true,
-            tabSize: 2
+            tabSize: 2,
+            lineWrapping: true
         });
 
-        // Código inicial por defecto
+        // Contenido inicial
         editor.setValue(`<!DOCTYPE html>
 <html>
 <head>
   <style>
-    body { font-family: sans-serif; text-align: center; padding-top: 50px; }
-    h1 { color: #6272a4; }
+    body { background: #0b0c10; color: #ff6a00; font-family: sans-serif; display: grid; place-items: center; height: 100vh; margin: 0; }
+    .box { border: 2px solid #ff6a00; padding: 20px; border-radius: 15px; text-align: center; }
   </style>
 </head>
 <body>
-  <h1>¡Hola Mundo!</h1>
-  <p>Escribe aquí para ver los cambios.</p>
-  <script>
-    console.log('Editor listo');
-  <\/script>
+  <div class="box">
+    <h1>SebasBot Editor</h1>
+    <p>El código se actualiza instantáneamente.</p>
+  </div>
 </body>
 </html>`);
 
-        // 2. Lógica de actualización del Output
-        const preview = document.getElementById("preview");
-        
-        function update() {
-            const content = editor.getValue();
-            const iframeDoc = preview.contentWindow.document;
-            iframeDoc.open();
-            iframeDoc.write(content);
-            iframeDoc.close();
-        }
+        // 2. Lógica de Output en tiempo real
+        const output = document.getElementById("output-view");
+        const updateOutput = () => {
+            const doc = output.contentWindow.document;
+            doc.open();
+            doc.write(editor.getValue());
+            doc.close();
+        };
 
-        editor.on("change", () => {
-            update();
-        });
+        editor.on("change", updateOutput);
+        updateOutput();
 
-        // Carga inicial
-        update();
-
-        // 3. Lógica del Resizer (Desplazamiento vertical/horizontal)
+        // 3. Lógica del Resizer (Barra de desplazamiento) corregida
         const resizer = document.getElementById("resizer");
         const leftPanel = document.getElementById("left-panel");
-        const container = document.getElementById("container");
+        const workspace = document.getElementById("workspace");
+        const appContainer = document.getElementById("app-container");
 
-        let isResizing = false;
+        let isDragging = false;
 
-        resizer.addEventListener("mousedown", (e) => {
-            isResizing = true;
-            document.body.style.cursor = "col-resize";
-        });
+        const startDragging = (e) => {
+            isDragging = true;
+            resizer.classList.add("active");
+            appContainer.classList.add("dragging");
+        };
 
-        document.addEventListener("mousemove", (e) => {
-            if (!isResizing) return;
+        const stopDragging = () => {
+            isDragging = false;
+            resizer.classList.remove("active");
+            appContainer.classList.remove("dragging");
+        };
+
+        const onDrag = (e) => {
+            if (!isDragging) return;
+
+            const isMobile = window.innerWidth <= 768;
             
-            let offsetLeft = e.clientX;
-            let containerWidth = container.clientWidth;
-            
-            // Limitamos el ancho mínimo y máximo
-            if (offsetLeft > 100 && offsetLeft < containerWidth - 100) {
-                let percentage = (offsetLeft / containerWidth) * 100;
-                leftPanel.style.flex = `0 0 ${percentage}%`;
-            }
-        });
+            if (isMobile) {
+                // Desplazamiento Vertical (Móvil)
+                const containerHeight = workspace.offsetHeight;
+                const pointerY = e.touches ? e.touches[0].clientY : e.clientY;
+                const topOffset = workspace.getBoundingClientRect().top;
+                const percentage = ((pointerY - topOffset) / containerHeight) * 100;
+                
+                if (percentage > 10 && percentage < 90) {
+                    leftPanel.style.flex = `0 0 ${percentage}%`;
+                }
+            } else {
+                // Desplazamiento Horizontal (Escritorio)
+                const containerWidth = workspace.offsetWidth;
+                const pointerX = e.clientX;
+                const percentage = (pointerX / containerWidth) * 100;
 
-        document.addEventListener("mouseup", () => {
-            isResizing = false;
-            document.body.style.cursor = "default";
-        });
-
-        // Soporte básico para táctil en móvil (Resizer)
-        resizer.addEventListener("touchstart", () => isResizing = true);
-        document.addEventListener("touchend", () => isResizing = false);
-        document.addEventListener("touchmove", (e) => {
-            if (!isResizing) return;
-            let touch = e.touches[0];
-            let containerHeight = container.clientHeight;
-            let offsetTop = touch.clientY - 50; // Ajuste por el header
-            let percentage = (offsetTop / containerHeight) * 100;
-            if (percentage > 10 && percentage < 90) {
-                leftPanel.style.flex = `0 0 ${percentage}%`;
+                if (percentage > 10 && percentage < 90) {
+                    leftPanel.style.flex = `0 0 ${percentage}%`;
+                }
             }
-        });
+        };
+
+        // Eventos de Mouse
+        resizer.addEventListener("mousedown", startDragging);
+        document.addEventListener("mousemove", onDrag);
+        document.addEventListener("mouseup", stopDragging);
+
+        // Eventos Táctiles
+        resizer.addEventListener("touchstart", startDragging);
+        document.addEventListener("touchmove", onDrag);
+        document.addEventListener("touchend", stopDragging);
+
     </script>
 </body>
 </html>
